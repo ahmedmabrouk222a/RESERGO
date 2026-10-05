@@ -2,7 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import type { ParticipantSubmission } from '../types/assessment';
 import { calculateNDI } from './scoring/ndi';
 
-// Read from environment variables if present, or fallback to stored browser config
+const DEFAULT_SUPABASE_URL = 'https://mwuhvkzmxrymayecsfee.supabase.co';
+const DEFAULT_SUPABASE_KEY = 'sb_publishable_A--Wk5UBKiE0RmSVGzgzKw_KUDGxk56';
+
+// Read from environment variables if present, or fallback to stored browser config or project defaults
 const envUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const envAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
@@ -17,8 +20,8 @@ const getStoredSupabaseConfig = () => {
 };
 
 const stored = getStoredSupabaseConfig();
-export const supabaseUrl = envUrl || stored.url;
-export const supabaseAnonKey = envAnonKey || stored.key;
+export const supabaseUrl = envUrl || stored.url || DEFAULT_SUPABASE_URL;
+export const supabaseAnonKey = envAnonKey || stored.key || DEFAULT_SUPABASE_KEY;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
