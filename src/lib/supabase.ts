@@ -2,15 +2,39 @@ import { createClient } from '@supabase/supabase-js';
 import type { ParticipantSubmission } from '../types/assessment';
 import { calculateNDI } from './scoring/ndi';
 
-// Read from environment variables if present
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Read from environment variables if present, or fallback to stored browser config
+const envUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const envAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+const getStoredSupabaseConfig = () => {
+  try {
+    const url = localStorage.getItem('research_supabase_url') || '';
+    const key = localStorage.getItem('research_supabase_key') || '';
+    return { url, key };
+  } catch {
+    return { url: '', key: '' };
+  }
+};
+
+const stored = getStoredSupabaseConfig();
+export const supabaseUrl = envUrl || stored.url;
+export const supabaseAnonKey = envAnonKey || stored.key;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
+
+export function saveCustomSupabaseConfig(url: string, key: string): void {
+  try {
+    localStorage.setItem('research_supabase_url', url.trim());
+    localStorage.setItem('research_supabase_key', key.trim());
+    window.location.reload();
+  } catch (err) {
+    console.error('Failed to save Supabase config:', err);
+  }
+}
 
 /**
  * Saves submission to Supabase PostgreSQL database if configured.

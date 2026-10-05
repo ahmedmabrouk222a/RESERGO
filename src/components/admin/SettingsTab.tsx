@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Database, Trash2, AlertCircle, KeyRound, Lock, Mail, CheckCircle2, Check } from 'lucide-react';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { Database, Trash2, AlertCircle, KeyRound, Lock, Mail, CheckCircle2, Check, Save } from 'lucide-react';
+import { isSupabaseConfigured, saveCustomSupabaseConfig, supabaseUrl, supabaseAnonKey } from '../../lib/supabase';
 import { getStoredAdminCredentials, saveAdminCredentials } from '../../lib/storage';
 
 interface SettingsTabProps {
@@ -15,6 +15,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [customSupabaseUrl, setCustomSupabaseUrl] = useState(supabaseUrl || '');
+  const [customSupabaseKey, setCustomSupabaseKey] = useState(supabaseAnonKey || '');
 
   const [credsSuccess, setCredsSuccess] = useState<string | null>(null);
   const [credsError, setCredsError] = useState<string | null>(null);
@@ -49,6 +52,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
+  };
+
+  const handleSaveSupabaseKeys = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveCustomSupabaseConfig(customSupabaseUrl, customSupabaseKey);
   };
 
   return (
@@ -185,16 +193,16 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         </div>
       </div>
 
-      {/* 3. Supabase Connection Status Card */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-card space-y-4">
+      {/* 3. Supabase Cloud Database Connection Card */}
+      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-card space-y-6">
         <div className="flex justify-between items-center pb-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-slate-900 text-teal-400 flex items-center justify-center font-bold">
               <Database className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base">Supabase Cloud Database Status</h3>
-              <p className="text-xs text-slate-500">Cross-Device Real-Time Sync</p>
+              <h3 className="font-bold text-slate-900 text-base">Supabase Cloud Database (Multi-Device Sync)</h3>
+              <p className="text-xs text-slate-500">Connect cloud database to show submissions from ALL phones/devices worldwide</p>
             </div>
           </div>
           <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
@@ -203,26 +211,53 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             {isSupabaseConfigured ? (
               <>
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Supabase Live Connected</span>
+                <span>Cloud Sync Active</span>
               </>
             ) : (
               <>
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                <span>LocalStorage Active</span>
+                <span>LocalStorage Mode Only</span>
               </>
             )}
           </div>
         </div>
 
-        <div className="text-xs text-slate-600 space-y-2">
-          <p>
-            When deployed to hosting (Vercel, Hostinger, Netlify), set your Supabase environment variables for live multi-device database sync across all participants:
-          </p>
-          <div className="p-3.5 rounded-xl bg-slate-900 text-slate-200 font-mono text-[11px] space-y-1 border border-slate-800 shadow-inner">
-            <p className="text-teal-400">VITE_SUPABASE_URL=https://your-project.supabase.co</p>
-            <p className="text-teal-400">VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</p>
+        <form onSubmit={handleSaveSupabaseKeys} className="space-y-4 text-xs">
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">Supabase Project URL</label>
+            <input
+              type="text"
+              value={customSupabaseUrl}
+              onChange={(e) => setCustomSupabaseUrl(e.target.value)}
+              placeholder="https://your-project.supabase.co"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 font-mono text-xs"
+            />
           </div>
-        </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">Supabase Anon / Public API Key</label>
+            <input
+              type="password"
+              value={customSupabaseKey}
+              onChange={(e) => setCustomSupabaseKey(e.target.value)}
+              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 font-mono text-xs"
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2">
+            <p className="text-[11px] text-slate-500">
+              * Database table creation script is available in repository root as <code>schema.sql</code>.
+            </p>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>Save & Connect Cloud Sync</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
