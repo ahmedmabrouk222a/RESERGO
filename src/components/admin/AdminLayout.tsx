@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, BarChart3, Download, Settings, LogOut, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart3, Download, Settings, LogOut, Activity, RefreshCw } from 'lucide-react';
 
 export type AdminTab = 'overview' | 'participants' | 'analytics' | 'export' | 'settings';
 
@@ -8,6 +8,8 @@ interface AdminLayoutProps {
   onSelectTab: (tab: AdminTab) => void;
   onLogout: () => void;
   totalCount: number;
+  onRefreshData?: () => void;
+  isRefreshing?: boolean;
   children: React.ReactNode;
 }
 
@@ -16,6 +18,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   onSelectTab,
   onLogout,
   totalCount,
+  onRefreshData,
+  isRefreshing = false,
   children,
 }) => {
   const navItems = [
@@ -32,14 +36,27 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       <aside className="w-full md:w-64 bg-slate-900 text-slate-300 border-r border-slate-800 shrink-0 flex flex-col justify-between">
         <div className="p-4 sm:p-6 space-y-6">
           {/* Admin Header Branding */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-teal-500 flex items-center justify-center text-slate-950 font-bold shadow-md">
-              <Activity className="w-5 h-5 text-slate-950" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-teal-500 flex items-center justify-center text-slate-950 font-bold shadow-md">
+                <Activity className="w-5 h-5 text-slate-950" />
+              </div>
+              <div>
+                <h2 className="font-bold text-white text-sm tracking-tight">Admin Portal</h2>
+                <p className="text-[10px] text-slate-400">Academic Research System</p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-bold text-white text-sm tracking-tight">Admin Portal</h2>
-              <p className="text-[10px] text-slate-400">Academic Research System</p>
-            </div>
+
+            {onRefreshData && (
+              <button
+                onClick={onRefreshData}
+                disabled={isRefreshing}
+                title="Refresh Submissions"
+                className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-400 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-teal-300' : ''}`} />
+              </button>
+            )}
           </div>
 
           {/* Navigation */}

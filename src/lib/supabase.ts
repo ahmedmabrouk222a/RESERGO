@@ -36,8 +36,7 @@ export async function syncSubmissionToSupabase(submission: ParticipantSubmission
           vas_score: submission.demographics.vasScore,
           created_at: submission.submittedAt,
         }
-      ])
-      .select();
+      ]);
 
     if (partError) {
       console.error('Supabase participant insert error:', partError);
@@ -105,5 +104,111 @@ export async function syncSubmissionToSupabase(submission: ParticipantSubmission
   } catch (err) {
     console.error('Failed to sync to Supabase:', err);
     return false;
+  }
+}
+
+/**
+ * Fetches all live participant submissions recorded in Supabase cloud database.
+ */
+export async function fetchSubmissionsFromSupabase(): Promise<ParticipantSubmission[] | null> {
+  if (!supabase) return null;
+
+  try {
+    const { data: participants, error: pErr } = await supabase
+      .from('participants')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (pErr || !participants) return null;
+
+    const { data: results } = await supabase.from('assessment_results').select('*');
+    const { data: ndiResp } = await supabase.from('ndi_responses').select('*');
+    const { data: dassResp } = await supabase.from('dass_responses').select('*');
+    const { data: ergoResp } = await supabase.from('ergonomic_responses').select('*');
+
+    const resMap = new Map((results || []).map(r => [r.participant_id, r]));
+    const ergoMap = new Map((ergoResp || []).map(e => [e.participant_id, e]));
+
+    return participants.map((p) => {
+      const r = resMap.get(p.id) || {};
+      const e = ergoMap.get(p.id) || {};
+      const ndiList = (ndiResp || []).filter(n => n.participant_id === p.id);
+      const dassList = (dassResp || []).filter(d => d.participant_id === p.id);
+
+      return {
+        id: p.id,
+        participantId: p.participant_id,
+        demographics: {
+          fullName: p.full_name,
+          age: p.age,
+          sex: p.sex,
+          academicMajor: p.academic_major,
+          yearOfStudy: p.year_of_study,
+          dailyScreenTime: Number(p.daily_screen_time),
+          weeklyLabHours: Number(p.weekly_lab_clinical_hours),
+          vasScore: p.vas_score,
+        },
+        ndiAnswers: ndiList.map(n => ({
+          sectionId: n.section_number,
+          sectionName: n.section_name,
+          selectedOptionIndex: n.selected_option_index,
+          isApplicable: n.is_applicable
+        })),
+        dassAnswers: dassList.map(d => ({
+          questionNumber: d.question_number,
+          score: d.score,
+          category: d.category as any
+        })),
+        ergoAnswers: {
+          laptop: e.laptop_score ?? 0,
+          posture: e.posture_score ?? 0,
+          breaks: e.breaks_score ?? 0,
+          chair: e.chair_score ?? 0,
+        },
+        ndiResult: {
+          totalScore: r.ndi_score ?? 0,
+          maxPossibleScore: r.ndi_max_score ?? 50,
+          percentage: Number(r.ndi_percentage ?? 0),
+          severity: r.ndi_severity ?? 'No Disability'
+        },
+        dassResult: {
+          depression: {
+            rawScore: r.depression_raw ?? 0,
+            finalScore: r.depression_score ?? 0,
+            maxPossibleScore: 42,
+            percentage: Number(r.depression_percentage ?? 0),
+            severity: r.depression_severity ?? 'Normal'
+          },
+          anxiety: {
+            rawScore: r.anxiety_raw ?? 0,
+            finalScore: r.anxiety_score ?? 0,
+            maxPossibleScore: 42,
+            percentage: Number(r.anxiety_percentage ?? 0),
+            severity: r.anxiety_severity ?? 'Normal'
+          },
+          stress: {
+            rawScore: r.stress_raw ?? 0,
+            finalScore: r.stress_score ?? 0,
+            maxPossibleScore: 42,
+            percentage: Number(r.stress_percentage ?? 0),
+            severity: r.stress_severity ?? 'Normal'
+          }
+        },
+        ergoResult: {
+          totalScore: r.ergo_score ?? 0,
+          maxPossibleScore: r.ergo_max_score ?? 6,
+          percentage: Number(r.ergo_percentage ?? 0),
+          riskLevel: r.ergo_severity ?? 'Low Ergonomic Risk',
+          laptopScore: e.laptop_score ?? 0,
+          postureScore: e.posture_score ?? 0,
+          breaksScore: e.breaks_score ?? 0,
+          chairScore: e.chair_score ?? 0,
+        },
+        submittedAt: p.created_at,
+      };
+    });
+  } catch (err) {
+    console.error('Failed to fetch from Supabase:', err);
+    return null;
   }
 }

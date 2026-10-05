@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type {
   ParticipantDemographics,
   NDIAnswer,
@@ -9,8 +9,8 @@ import type {
   AdminUser
 } from './types/assessment';
 import { calculateAllResults } from './lib/scoring';
-import { getStoredSubmissions, saveSubmission, resetDemoData, clearAllSubmissions, generateParticipantId } from './lib/storage';
-import { syncSubmissionToSupabase } from './lib/supabase';
+import { getStoredSubmissions, saveSubmission, clearAllSubmissions, generateParticipantId } from './lib/storage';
+import { fetchSubmissionsFromSupabase, isSupabaseConfigured, syncSubmissionToSupabase } from './lib/supabase';
 import { exportToCSV, exportToExcel } from './lib/export';
 
 // Components
@@ -54,6 +54,7 @@ export function App() {
 
   // Database Submissions State
   const [submissions, setSubmissions] = useState<ParticipantSubmission[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   // Active Selected Participant Modal state
   const [selectedParticipant, setSelectedParticipant] = useState<ParticipantSubmission | null>(null);
@@ -81,11 +82,67 @@ export function App() {
   const [dassAnswers, setDassAnswers] = useState<DASSAnswer[]>([]);
   const [lastSubmittedRecord, setLastSubmittedRecord] = useState<ParticipantSubmission | null>(null);
 
-  // Load Submissions on mount
-  useEffect(() => {
-    const data = getStoredSubmissions();
-    setSubmissions(data);
+  // Master Data Refresh (Merges local storage & cloud database)
+  const refreshData = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const local = getStoredSubmissions();
+      let merged = [...local];
+
+      if (isSupabaseConfigured) {
+        const cloud = await fetchSubmissionsFromSupabase();
+        if (cloud && cloud.length > 0) {
+          const map = new Map<string, ParticipantSubmission>();
+          // Put local first
+          local.forEach(s => map.set(s.id, s));
+          // Put/overwrite cloud submissions (authoritative)
+          cloud.forEach(s => map.set(s.id, s));
+          merged = Array.from(map.values()).sort(
+            (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+          );
+        }
+      }
+
+      setSubmissions(merged);
+    } catch (err) {
+      console.error('Error refreshing submissions:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
   }, []);
+
+  // Initial load and listeners for multi-tab / cloud sync
+  useEffect(() => {
+    refreshData();
+
+    // Multi-tab local sync listener
+    const handleStorageChange = () => {
+      refreshData();
+    };
+
+    // Window focus listener to pull new submissions when returning to tab
+    const handleFocus = () => {
+      refreshData();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [refreshData]);
+
+  // Periodic polling when admin portal is active
+  useEffect(() => {
+    if (currentSide !== 'admin') return;
+    const interval = setInterval(() => {
+      refreshData();
+    }, 10000); // refresh every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [currentSide, refreshData]);
 
   // Handlers for Participant Flow
   const handleStartSurvey = () => {
@@ -139,15 +196,14 @@ export function App() {
       submittedAt: new Date().toISOString(),
     };
 
-    // Save to LocalStorage
+    // 1. Save to LocalStorage
     saveSubmission(newSubmission);
 
-    // Sync to Supabase if configured
+    // 2. Sync to Supabase if configured
     await syncSubmissionToSupabase(newSubmission);
 
-    // Update state
-    const updated = [newSubmission, ...submissions];
-    setSubmissions(updated);
+    // 3. Update state & sync
+    await refreshData();
     setLastSubmittedRecord(newSubmission);
     setSurveyStep('confirmation');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -175,16 +231,12 @@ export function App() {
   const handleAdminLogin = (email: string) => {
     setAdminUser({ email, isAuthenticated: true });
     setCurrentSide('admin');
+    refreshData();
   };
 
   const handleAdminLogout = () => {
     setAdminUser({ email: '', isAuthenticated: false });
     setCurrentSide('participant');
-  };
-
-  const handleResetDemo = () => {
-    const demo = resetDemoData();
-    setSubmissions(demo);
   };
 
   const handleClearData = () => {
@@ -298,6 +350,8 @@ export function App() {
             onSelectTab={setAdminTab}
             onLogout={handleAdminLogout}
             totalCount={submissions.length}
+            onRefreshData={refreshData}
+            isRefreshing={isRefreshing}
           >
             {adminTab === 'overview' && (
               <OverviewTab
@@ -330,7 +384,6 @@ export function App() {
 
             {adminTab === 'settings' && (
               <SettingsTab
-                onResetDemoData={handleResetDemo}
                 onClearAllData={handleClearData}
               />
             )}

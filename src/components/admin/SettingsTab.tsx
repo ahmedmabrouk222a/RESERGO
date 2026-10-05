@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { Database, RefreshCw, Trash2, CheckCircle2, AlertCircle, KeyRound, Lock, Mail, ShieldCheck, Check } from 'lucide-react';
+import { Database, Trash2, AlertCircle, KeyRound, Lock, Mail, CheckCircle2, Check } from 'lucide-react';
 import { isSupabaseConfigured } from '../../lib/supabase';
-import { getStoredAdminCredentials, saveAdminCredentials, isProductionMode, setProductionMode } from '../../lib/storage';
+import { getStoredAdminCredentials, saveAdminCredentials } from '../../lib/storage';
 
 interface SettingsTabProps {
-  onResetDemoData: () => void;
   onClearAllData: () => void;
 }
 
 export const SettingsTab: React.FC<SettingsTabProps> = ({
-  onResetDemoData,
   onClearAllData,
 }) => {
   const currentCreds = getStoredAdminCredentials();
@@ -20,8 +18,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
   const [credsSuccess, setCredsSuccess] = useState<string | null>(null);
   const [credsError, setCredsError] = useState<string | null>(null);
-
-  const [prodMode, setProdMode] = useState<boolean>(isProductionMode());
 
   const handleSaveCredentials = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,20 +51,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     setConfirmPassword('');
   };
 
-  const handleToggleProdMode = (enabled: boolean) => {
-    setProductionMode(enabled);
-    setProdMode(enabled);
-    if (enabled) {
-      // Clear demo data when switching to pure live real data mode
-      onClearAllData();
-    }
-  };
-
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">System Settings & Admin Security</h1>
-        <p className="text-xs text-slate-500 mt-1">Manage admin login credentials, database deployment status, and real participant data modes.</p>
+        <p className="text-xs text-slate-500 mt-1">Manage admin login credentials, view real participant data, and monitor database connection status.</p>
       </div>
 
       {/* 1. CHANGE ADMIN USERNAME & PASSWORD CARD */}
@@ -165,52 +152,34 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         </form>
       </div>
 
-      {/* 2. REAL LIVE PARTICIPANT DATA MODE CARD */}
+      {/* 2. DATA MANAGEMENT & CLEAR ALL RECORDS */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-card space-y-4">
         <div className="flex justify-between items-center pb-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center font-bold">
+              <Trash2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base">Production Mode (Real Data Only)</h3>
-              <p className="text-xs text-slate-500">Ensure only actual live participants who fill out the survey are stored</p>
+              <h3 className="font-bold text-slate-900 text-base">Purge Participant Submissions</h3>
+              <p className="text-xs text-slate-500">Permanently delete stored participant submissions from local storage</p>
             </div>
           </div>
-          <button
-            onClick={() => handleToggleProdMode(!prodMode)}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              prodMode ? 'bg-teal-700 text-white shadow-xs' : 'bg-slate-200 text-slate-700'
-            }`}
-          >
-            {prodMode ? 'Active (Real Data)' : 'Demo Mode Active'}
-          </button>
         </div>
 
         <p className="text-xs text-slate-600 leading-relaxed">
-          When <strong>Real Data Mode</strong> is enabled, all sample demo participants are removed and the system exclusively records submissions from real participants who take your questionnaire online.
+          All participant submissions recorded from any device are displayed in the Admin Portal. If you need to clear testing data before starting your official cohort data collection, use the action below.
         </p>
 
-        <div className="flex flex-wrap gap-4 pt-2">
+        <div className="pt-2 flex justify-start">
           <button
-            onClick={() => handleToggleProdMode(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
+            onClick={() => {
+              if (window.confirm('Are you sure you want to permanently clear all stored participant submissions?')) {
+                onClearAllData();
+              }
+            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
           >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Enable Real Participant Live Mode</span>
-          </button>
-          <button
-            onClick={onResetDemoData}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors cursor-pointer"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Load Demo Data Cohort (10 Participants)</span>
-          </button>
-          <button
-            onClick={onClearAllData}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs transition-colors cursor-pointer"
-          >
-            <Trash2 className="w-4 h-4 text-rose-600" />
+            <Trash2 className="w-4 h-4" />
             <span>Purge All Submissions</span>
           </button>
         </div>
@@ -225,7 +194,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-base">Supabase Cloud Database Status</h3>
-              <p className="text-xs text-slate-500">PostgreSQL Row Level Security (RLS)</p>
+              <p className="text-xs text-slate-500">Cross-Device Real-Time Sync</p>
             </div>
           </div>
           <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
@@ -239,7 +208,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             ) : (
               <>
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                <span>LocalStorage Mode (Ready for Supabase ENVs)</span>
+                <span>LocalStorage Active</span>
               </>
             )}
           </div>
@@ -247,7 +216,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
         <div className="text-xs text-slate-600 space-y-2">
           <p>
-            When deployed to hosting (Vercel, Netlify, Hostinger, Render), add these environment variables in your hosting dashboard for live cloud database synchronization:
+            When deployed to hosting (Vercel, Hostinger, Netlify), set your Supabase environment variables for live multi-device database sync across all participants:
           </p>
           <div className="p-3.5 rounded-xl bg-slate-900 text-slate-200 font-mono text-[11px] space-y-1 border border-slate-800 shadow-inner">
             <p className="text-teal-400">VITE_SUPABASE_URL=https://your-project.supabase.co</p>

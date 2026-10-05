@@ -1,9 +1,7 @@
 import type { ParticipantSubmission } from '../types/assessment';
-import { INITIAL_DEMO_PARTICIPANTS } from '../data/demoData';
 
 const STORAGE_KEY = 'academic_research_submissions_v1';
 const ADMIN_CREDS_KEY = 'academic_research_admin_creds_v1';
-const PROD_MODE_KEY = 'academic_research_prod_mode_v1';
 
 export interface AdminCredentials {
   email: string;
@@ -48,36 +46,14 @@ export function validateAdminLogin(inputEmail: string, inputPassword: string): b
   );
 }
 
-// --- PRODUCTION MODE & LIVE REAL DATA MANAGERS ---
-
-export function isProductionMode(): boolean {
-  try {
-    const val = localStorage.getItem(PROD_MODE_KEY);
-    return val === 'true';
-  } catch (err) {
-    return false;
-  }
-}
-
-export function setProductionMode(enabled: boolean): void {
-  try {
-    localStorage.setItem(PROD_MODE_KEY, enabled ? 'true' : 'false');
-  } catch (err) {
-    console.error('Failed to toggle production mode:', err);
-  }
-}
-
 // --- PARTICIPANT SUBMISSIONS MANAGERS ---
 
 export function getStoredSubmissions(): ParticipantSubmission[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      // If production mode is enabled, start with an empty array for 100% real live data
-      const prod = isProductionMode();
-      const initial = prod ? [] : INITIAL_DEMO_PARTICIPANTS;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-      return initial;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+      return [];
     }
     return JSON.parse(raw);
   } catch (err) {
@@ -89,27 +65,21 @@ export function getStoredSubmissions(): ParticipantSubmission[] {
 export function saveSubmission(submission: ParticipantSubmission): void {
   try {
     const current = getStoredSubmissions();
-    const updated = [submission, ...current];
+    // Avoid duplicate insertions
+    const exists = current.some(s => s.id === submission.id);
+    const updated = exists ? current : [submission, ...current];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    // Trigger storage event for multi-tab sync in same browser
+    window.dispatchEvent(new Event('storage'));
   } catch (err) {
     console.error('Failed to save submission to local storage:', err);
-  }
-}
-
-export function resetDemoData(): ParticipantSubmission[] {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DEMO_PARTICIPANTS));
-    setProductionMode(false);
-    return INITIAL_DEMO_PARTICIPANTS;
-  } catch (err) {
-    console.error('Failed to reset demo data:', err);
-    return INITIAL_DEMO_PARTICIPANTS;
   }
 }
 
 export function clearAllSubmissions(): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+    window.dispatchEvent(new Event('storage'));
   } catch (err) {
     console.error('Failed to clear submissions:', err);
   }
