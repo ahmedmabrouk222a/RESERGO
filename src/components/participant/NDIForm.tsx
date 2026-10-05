@@ -94,21 +94,20 @@ export const NDIForm: React.FC<NDIFormProps> = ({
     }
   };
 
-  // Count sections answered or explicitly marked N/A
-  const answeredApplicableCount = answers.filter(a => a.isApplicable && a.selectedOptionIndex !== null).length;
-  const explicitNACount = answers.filter(a => !a.isApplicable || a.selectedOptionIndex === null).length;
+  // Count sections with score 1-5 (Score 0 or unselected/N/A drops denominator by 5)
+  const answeredApplicableCount = answers.filter(a => a.isApplicable && a.selectedOptionIndex !== null && a.selectedOptionIndex >= 1).length;
+  const explicitNACount = answers.filter(a => !a.isApplicable || a.selectedOptionIndex === null || a.selectedOptionIndex === 0).length;
 
-  // Max Possible Score Denominator (e.g. 50 if 10 answered, 45 if 9 answered, 40 if 8 answered)
+  // Max Possible Score Denominator (e.g. 50 if 10 answered 1-5, 45 if 9, 40 if 8)
   const calculatedMaxScore = answeredApplicableCount > 0 ? answeredApplicableCount * 5 : 50;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Automatically convert any unselected sections to isApplicable = false (N/A)
-    // so denominator automatically drops to 45 (if 1 skipped) or 40 (if 2 skipped)
+    // Automatically mark 0 or unselected sections as not included in denominator
     const processedAnswers = answers.map(a => {
-      if (!a.isApplicable || a.selectedOptionIndex === null) {
-        return { ...a, isApplicable: false, selectedOptionIndex: null };
+      if (!a.isApplicable || a.selectedOptionIndex === null || a.selectedOptionIndex === 0) {
+        return { ...a, isApplicable: a.selectedOptionIndex === 0 ? true : false };
       }
       return { ...a, isApplicable: true };
     });

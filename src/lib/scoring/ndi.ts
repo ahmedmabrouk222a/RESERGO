@@ -21,7 +21,7 @@ export function calculateNDI(answers: NDIAnswer[]): NDIResult {
   let applicableSections = 0;
 
   answers.forEach((ans) => {
-    if (ans.isApplicable && ans.selectedOptionIndex !== null && ans.selectedOptionIndex >= 0) {
+    if (ans.isApplicable && ans.selectedOptionIndex !== null && ans.selectedOptionIndex >= 1 && ans.selectedOptionIndex <= 5) {
       totalScore += ans.selectedOptionIndex;
       applicableSections += 1;
     }
