@@ -73,6 +73,14 @@ export const DASSForm: React.FC<DASSFormProps> = ({
           </div>
         </div>
 
+        {/* Subscale Indicators Legend Banner */}
+        <div className="flex flex-wrap items-center gap-2 p-3 rounded-2xl bg-indigo-50/70 border border-indigo-100 text-xs text-indigo-950 font-semibold">
+          <span className="text-indigo-900 font-bold">Subscale Key:</span>
+          <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-900 font-mono font-bold">(S) = Stress</span>
+          <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-mono font-bold">(A) = Anxiety</span>
+          <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-900 font-mono font-bold">(D) = Depression</span>
+        </div>
+
         <MedicalDisclaimer compact />
 
         {validationError && (
