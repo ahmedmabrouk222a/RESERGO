@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { ParticipantSubmission } from '../../types/assessment';
-import { CheckCircle2, Hash, Eye, EyeOff, RefreshCw, FileCheck2, Activity, Monitor, Brain } from 'lucide-react';
+import { CheckCircle2, Hash, Eye, EyeOff, RefreshCw, FileCheck2, Activity, Monitor, Brain, Table } from 'lucide-react';
 import { SeverityBadge } from '../common/SeverityBadge';
 import { ProgressBar } from '../common/ProgressBar';
 import { MedicalDisclaimer } from '../common/MedicalDisclaimer';
@@ -15,6 +15,7 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
   onRestart,
 }) => {
   const [showSummary, setShowSummary] = useState(false);
+  const [showCutoffs, setShowCutoffs] = useState(false);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 py-4">
@@ -76,7 +77,7 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
                       <Activity className="w-3.5 h-3.5 text-teal-600" />
                       <span>NDI Index</span>
                     </h4>
-                    <p className="text-slate-500 text-[11px] mt-0.5">
+                    <p className="text-slate-500 text-[11px] mt-0.5 font-semibold">
                       {submission.ndiResult.totalScore} / {submission.ndiResult.maxPossibleScore} ({submission.ndiResult.percentage}%)
                     </p>
                   </div>
@@ -93,7 +94,7 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
                       <Monitor className="w-3.5 h-3.5 text-teal-600" />
                       <span>Ergonomic Risk</span>
                     </h4>
-                    <p className="text-slate-500 text-[11px] mt-0.5">
+                    <p className="text-slate-500 text-[11px] mt-0.5 font-semibold">
                       {submission.ergoResult.totalScore} / {submission.ergoResult.maxPossibleScore} ({submission.ergoResult.percentage}%)
                     </p>
                   </div>
@@ -102,27 +103,109 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
                 <ProgressBar value={submission.ergoResult.percentage} colorVariant="emerald" showPercentage={false} height="sm" />
               </div>
 
-              {/* DASS Summary */}
+              {/* DASS-21 Summary with Numerical Scores & Percentages */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                 <h4 className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
                   <Brain className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>DASS-21 Scales</span>
+                  <span>DASS-21 Scales (Scores / 42)</span>
                 </h4>
-                <div className="space-y-1.5 text-[11px]">
+                <div className="space-y-2 text-[11px]">
+                  {/* Depression */}
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-600">Depression:</span>
+                    <div>
+                      <span className="font-semibold text-slate-700">Depression: </span>
+                      <span className="font-bold text-slate-900">
+                        {submission.dassResult.depression.finalScore} / 42 ({submission.dassResult.depression.percentage}%)
+                      </span>
+                    </div>
                     <SeverityBadge type="depression" level={submission.dassResult.depression.severity} size="sm" />
                   </div>
+
+                  {/* Anxiety */}
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-600">Anxiety:</span>
+                    <div>
+                      <span className="font-semibold text-slate-700">Anxiety: </span>
+                      <span className="font-bold text-slate-900">
+                        {submission.dassResult.anxiety.finalScore} / 42 ({submission.dassResult.anxiety.percentage}%)
+                      </span>
+                    </div>
                     <SeverityBadge type="anxiety" level={submission.dassResult.anxiety.severity} size="sm" />
                   </div>
+
+                  {/* Stress */}
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-600">Stress:</span>
+                    <div>
+                      <span className="font-semibold text-slate-700">Stress: </span>
+                      <span className="font-bold text-slate-900">
+                        {submission.dassResult.stress.finalScore} / 42 ({submission.dassResult.stress.percentage}%)
+                      </span>
+                    </div>
                     <SeverityBadge type="stress" level={submission.dassResult.stress.severity} size="sm" />
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Expandable DASS-21 Cut-Off Ranges Reference Table */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCutoffs(!showCutoffs)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 hover:text-indigo-800 transition-colors cursor-pointer"
+              >
+                <Table className="w-3.5 h-3.5 text-indigo-600" />
+                <span>{showCutoffs ? 'Hide DASS-21 Cut-off Ranges Table' : 'Show DASS-21 Cut-off Ranges Table (Reference)'}</span>
+              </button>
+
+              {showCutoffs && (
+                <div className="mt-3 overflow-x-auto bg-slate-900 text-white p-4 rounded-2xl border border-slate-800 text-xs">
+                  <p className="text-[11px] text-slate-400 mb-2 font-medium">
+                    * Final DASS-21 score = Raw sum × 2 (Maximum score = 42). Recommended cut-off scores:
+                  </p>
+                  <table className="w-full text-left border-collapse text-[11px]">
+                    <thead>
+                      <tr className="border-b border-slate-700 text-teal-400">
+                        <th className="py-1.5 px-3">Severity Rating</th>
+                        <th className="py-1.5 px-3">Depression</th>
+                        <th className="py-1.5 px-3">Anxiety</th>
+                        <th className="py-1.5 px-3">Stress</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800 text-slate-200">
+                      <tr>
+                        <td className="py-1.5 px-3 font-semibold text-emerald-400">Normal</td>
+                        <td className="py-1.5 px-3">0 – 9</td>
+                        <td className="py-1.5 px-3">0 – 7</td>
+                        <td className="py-1.5 px-3">0 – 14</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 font-semibold text-amber-400">Mild</td>
+                        <td className="py-1.5 px-3">10 – 13</td>
+                        <td className="py-1.5 px-3">8 – 9</td>
+                        <td className="py-1.5 px-3">15 – 18</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 font-semibold text-orange-400">Moderate</td>
+                        <td className="py-1.5 px-3">14 – 20</td>
+                        <td className="py-1.5 px-3">10 – 14</td>
+                        <td className="py-1.5 px-3">19 – 25</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 font-semibold text-rose-400">Severe</td>
+                        <td className="py-1.5 px-3">21 – 27</td>
+                        <td className="py-1.5 px-3">15 – 19</td>
+                        <td className="py-1.5 px-3">26 – 33</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 font-semibold text-red-500">Extremely Severe</td>
+                        <td className="py-1.5 px-3">28+</td>
+                        <td className="py-1.5 px-3">20+</td>
+                        <td className="py-1.5 px-3">34+</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}

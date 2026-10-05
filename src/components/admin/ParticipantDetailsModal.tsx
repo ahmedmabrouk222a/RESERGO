@@ -254,6 +254,57 @@ export const ParticipantDetailsModal: React.FC<ParticipantDetailsModalProps> = (
                     <ProgressBar value={submission.dassResult.stress.percentage} colorVariant="rose" />
                   </div>
                 </div>
+
+                {/* DASS-21 Cut-Off Scores Reference Table */}
+                <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-2 text-xs">
+                  <h4 className="font-bold text-teal-400 text-xs uppercase tracking-wider">
+                    DASS-21 Clinical Severity Cut-Off Scores Reference Table (Multiply Raw x2)
+                  </h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-[11px]">
+                      <thead>
+                        <tr className="border-b border-slate-700 text-slate-400">
+                          <th className="py-1 px-3">Severity Category</th>
+                          <th className="py-1 px-3">Depression (0-42)</th>
+                          <th className="py-1 px-3">Anxiety (0-42)</th>
+                          <th className="py-1 px-3">Stress (0-42)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800 text-slate-200">
+                        <tr>
+                          <td className="py-1 px-3 font-semibold text-emerald-400">Normal</td>
+                          <td className="py-1 px-3">0 – 9</td>
+                          <td className="py-1 px-3">0 – 7</td>
+                          <td className="py-1 px-3">0 – 14</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 px-3 font-semibold text-amber-400">Mild</td>
+                          <td className="py-1 px-3">10 – 13</td>
+                          <td className="py-1 px-3">8 – 9</td>
+                          <td className="py-1 px-3">15 – 18</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 px-3 font-semibold text-orange-400">Moderate</td>
+                          <td className="py-1 px-3">14 – 20</td>
+                          <td className="py-1 px-3">10 – 14</td>
+                          <td className="py-1 px-3">19 – 25</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 px-3 font-semibold text-rose-400">Severe</td>
+                          <td className="py-1 px-3">21 – 27</td>
+                          <td className="py-1 px-3">15 – 19</td>
+                          <td className="py-1 px-3">26 – 33</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 px-3 font-semibold text-red-500">Extremely Severe</td>
+                          <td className="py-1 px-3">28+</td>
+                          <td className="py-1 px-3">20+</td>
+                          <td className="py-1 px-3">34+</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           )}
