@@ -430,30 +430,30 @@ export const ParticipantsTab: React.FC<ParticipantsTabProps> = ({
                       </div>
                     </td>
 
-                    {/* Stress Requirement 12 */}
+                    {/* Stress */}
                     <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="font-bold text-slate-900">
-                        {sub.dassResult.stress.finalScore}/42 ({sub.dassResult.stress.percentage}%)
+                      <div className="font-extrabold text-slate-900 text-sm">
+                        {sub.dassResult.stress.finalScore}
                       </div>
                       <div className="mt-0.5">
                         <SeverityBadge type="stress" level={sub.dassResult.stress.severity} size="sm" />
                       </div>
                     </td>
 
-                    {/* Depression Requirement 12 */}
+                    {/* Depression */}
                     <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="font-bold text-slate-900">
-                        {sub.dassResult.depression.finalScore}/42 ({sub.dassResult.depression.percentage}%)
+                      <div className="font-extrabold text-slate-900 text-sm">
+                        {sub.dassResult.depression.finalScore}
                       </div>
                       <div className="mt-0.5">
                         <SeverityBadge type="depression" level={sub.dassResult.depression.severity} size="sm" />
                       </div>
                     </td>
 
-                    {/* Anxiety Requirement 12 */}
+                    {/* Anxiety */}
                     <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="font-bold text-slate-900">
-                        {sub.dassResult.anxiety.finalScore}/42 ({sub.dassResult.anxiety.percentage}%)
+                      <div className="font-extrabold text-slate-900 text-sm">
+                        {sub.dassResult.anxiety.finalScore}
                       </div>
                       <div className="mt-0.5">
                         <SeverityBadge type="anxiety" level={sub.dassResult.anxiety.severity} size="sm" />

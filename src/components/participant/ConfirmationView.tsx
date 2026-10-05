@@ -103,19 +103,19 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
                 <ProgressBar value={submission.ergoResult.percentage} colorVariant="emerald" showPercentage={false} height="sm" />
               </div>
 
-              {/* DASS-21 Summary with Numerical Scores & Percentages */}
+              {/* DASS-21 Summary with Numerical Scores (No division or percentage) */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                 <h4 className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
                   <Brain className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>DASS-21 Scales (Scores / 42)</span>
+                  <span>DASS-21 Scales</span>
                 </h4>
                 <div className="space-y-2 text-[11px]">
                   {/* Depression */}
                   <div className="flex justify-between items-center">
                     <div>
                       <span className="font-semibold text-slate-700">Depression: </span>
-                      <span className="font-bold text-slate-900">
-                        {submission.dassResult.depression.finalScore} / 42 ({submission.dassResult.depression.percentage}%)
+                      <span className="font-extrabold text-slate-900 text-sm">
+                        {submission.dassResult.depression.finalScore}
                       </span>
                     </div>
                     <SeverityBadge type="depression" level={submission.dassResult.depression.severity} size="sm" />
@@ -125,8 +125,8 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
                   <div className="flex justify-between items-center">
                     <div>
                       <span className="font-semibold text-slate-700">Anxiety: </span>
-                      <span className="font-bold text-slate-900">
-                        {submission.dassResult.anxiety.finalScore} / 42 ({submission.dassResult.anxiety.percentage}%)
+                      <span className="font-extrabold text-slate-900 text-sm">
+                        {submission.dassResult.anxiety.finalScore}
                       </span>
                     </div>
                     <SeverityBadge type="anxiety" level={submission.dassResult.anxiety.severity} size="sm" />
@@ -136,8 +136,8 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
                   <div className="flex justify-between items-center">
                     <div>
                       <span className="font-semibold text-slate-700">Stress: </span>
-                      <span className="font-bold text-slate-900">
-                        {submission.dassResult.stress.finalScore} / 42 ({submission.dassResult.stress.percentage}%)
+                      <span className="font-extrabold text-slate-900 text-sm">
+                        {submission.dassResult.stress.finalScore}
                       </span>
                     </div>
                     <SeverityBadge type="stress" level={submission.dassResult.stress.severity} size="sm" />

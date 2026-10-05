@@ -190,15 +190,15 @@ export const ParticipantDetailsModal: React.FC<ParticipantDetailsModalProps> = (
                   </h4>
                   <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-600">Depression ({submission.dassResult.depression.finalScore}/42):</span>
+                      <span className="text-slate-600">Depression (Score: <strong>{submission.dassResult.depression.finalScore}</strong>):</span>
                       <SeverityBadge type="depression" level={submission.dassResult.depression.severity} size="sm" />
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-600">Anxiety ({submission.dassResult.anxiety.finalScore}/42):</span>
+                      <span className="text-slate-600">Anxiety (Score: <strong>{submission.dassResult.anxiety.finalScore}</strong>):</span>
                       <SeverityBadge type="anxiety" level={submission.dassResult.anxiety.severity} size="sm" />
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-600">Stress ({submission.dassResult.stress.finalScore}/42):</span>
+                      <span className="text-slate-600">Stress (Score: <strong>{submission.dassResult.stress.finalScore}</strong>):</span>
                       <SeverityBadge type="stress" level={submission.dassResult.stress.severity} size="sm" />
                     </div>
                   </div>
@@ -217,13 +217,12 @@ export const ParticipantDetailsModal: React.FC<ParticipantDetailsModalProps> = (
                     <div className="flex justify-between items-start">
                       <div>
                         <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Depression</h4>
-                        <p className="text-[11px] text-slate-500">
-                          Raw: {submission.dassResult.depression.rawScore} • Final: <strong>{submission.dassResult.depression.finalScore}</strong>/42
+                        <p className="text-xs text-slate-600 mt-1">
+                          Score: <strong className="text-sm text-slate-900">{submission.dassResult.depression.finalScore}</strong>
                         </p>
                       </div>
                       <SeverityBadge type="depression" level={submission.dassResult.depression.severity} size="sm" />
                     </div>
-                    <ProgressBar value={submission.dassResult.depression.percentage} colorVariant="indigo" />
                   </div>
 
                   {/* Anxiety Card */}
@@ -231,13 +230,12 @@ export const ParticipantDetailsModal: React.FC<ParticipantDetailsModalProps> = (
                     <div className="flex justify-between items-start">
                       <div>
                         <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Anxiety</h4>
-                        <p className="text-[11px] text-slate-500">
-                          Raw: {submission.dassResult.anxiety.rawScore} • Final: <strong>{submission.dassResult.anxiety.finalScore}</strong>/42
+                        <p className="text-xs text-slate-600 mt-1">
+                          Score: <strong className="text-sm text-slate-900">{submission.dassResult.anxiety.finalScore}</strong>
                         </p>
                       </div>
                       <SeverityBadge type="anxiety" level={submission.dassResult.anxiety.severity} size="sm" />
                     </div>
-                    <ProgressBar value={submission.dassResult.anxiety.percentage} colorVariant="amber" />
                   </div>
 
                   {/* Stress Card */}
@@ -245,13 +243,12 @@ export const ParticipantDetailsModal: React.FC<ParticipantDetailsModalProps> = (
                     <div className="flex justify-between items-start">
                       <div>
                         <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Stress</h4>
-                        <p className="text-[11px] text-slate-500">
-                          Raw: {submission.dassResult.stress.rawScore} • Final: <strong>{submission.dassResult.stress.finalScore}</strong>/42
+                        <p className="text-xs text-slate-600 mt-1">
+                          Score: <strong className="text-sm text-slate-900">{submission.dassResult.stress.finalScore}</strong>
                         </p>
                       </div>
                       <SeverityBadge type="stress" level={submission.dassResult.stress.severity} size="sm" />
                     </div>
-                    <ProgressBar value={submission.dassResult.stress.percentage} colorVariant="rose" />
                   </div>
                 </div>
 

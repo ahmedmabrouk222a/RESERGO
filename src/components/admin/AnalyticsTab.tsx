@@ -35,9 +35,9 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ submissions }) => {
   // 1. Calculate Mean Averages
   const avgNDI = Math.round((submissions.reduce((acc, s) => acc + s.ndiResult.percentage, 0) / total) * 10) / 10;
   const avgErgo = Math.round((submissions.reduce((acc, s) => acc + s.ergoResult.percentage, 0) / total) * 10) / 10;
-  const avgDepression = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.depression.percentage, 0) / total) * 10) / 10;
-  const avgAnxiety = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.anxiety.percentage, 0) / total) * 10) / 10;
-  const avgStress = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.stress.percentage, 0) / total) * 10) / 10;
+  const avgDepression = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.depression.finalScore, 0) / total) * 10) / 10;
+  const avgAnxiety = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.anxiety.finalScore, 0) / total) * 10) / 10;
+  const avgStress = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.stress.finalScore, 0) / total) * 10) / 10;
 
   // 2. NDI Severity Distribution Data
   const ndiDistMap: Record<string, number> = { 'No Disability': 0, 'Mild': 0, 'Moderate': 0, 'Severe': 0, 'Complete': 0 };
@@ -115,16 +115,16 @@ export const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ submissions }) => {
           <span className="text-2xl font-extrabold text-emerald-700">{avgErgo}%</span>
         </div>
         <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-card">
-          <span className="text-[11px] font-semibold text-slate-500 block">Avg Depression</span>
-          <span className="text-2xl font-extrabold text-indigo-700">{avgDepression}%</span>
+          <span className="text-[11px] font-semibold text-slate-500 block">Avg Depression Score</span>
+          <span className="text-2xl font-extrabold text-indigo-700">{avgDepression}</span>
         </div>
         <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-card">
-          <span className="text-[11px] font-semibold text-slate-500 block">Avg Anxiety</span>
-          <span className="text-2xl font-extrabold text-amber-700">{avgAnxiety}%</span>
+          <span className="text-[11px] font-semibold text-slate-500 block">Avg Anxiety Score</span>
+          <span className="text-2xl font-extrabold text-amber-700">{avgAnxiety}</span>
         </div>
         <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-card">
-          <span className="text-[11px] font-semibold text-slate-500 block">Avg Stress</span>
-          <span className="text-2xl font-extrabold text-rose-700">{avgStress}%</span>
+          <span className="text-[11px] font-semibold text-slate-500 block">Avg Stress Score</span>
+          <span className="text-2xl font-extrabold text-rose-700">{avgStress}</span>
         </div>
       </div>
 

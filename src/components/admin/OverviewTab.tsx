@@ -32,9 +32,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   // Calculate Averages
   const avgNDI = Math.round((submissions.reduce((acc, s) => acc + s.ndiResult.percentage, 0) / total) * 10) / 10;
   const avgErgo = Math.round((submissions.reduce((acc, s) => acc + s.ergoResult.percentage, 0) / total) * 10) / 10;
-  const avgDepression = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.depression.percentage, 0) / total) * 10) / 10;
-  const avgAnxiety = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.anxiety.percentage, 0) / total) * 10) / 10;
-  const avgStress = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.stress.percentage, 0) / total) * 10) / 10;
+  const avgDepression = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.depression.finalScore, 0) / total) * 10) / 10;
+  const avgAnxiety = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.anxiety.finalScore, 0) / total) * 10) / 10;
+  const avgStress = Math.round((submissions.reduce((acc, s) => acc + s.dassResult.stress.finalScore, 0) / total) * 10) / 10;
 
   // High Risk Participants count
   const highRiskCount = submissions.filter(s =>
@@ -133,42 +133,39 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         </div>
       </div>
 
-      {/* DASS-21 Subscale Averages Row */}
+      {/* DASS-21 Subscale Cohort Mean Scores */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-card space-y-4">
         <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
           <Brain className="w-4 h-4 text-indigo-600" />
-          <span>DASS-21 Subscale Cohort Averages (Scaled to 42 Max)</span>
+          <span>DASS-21 Subscale Cohort Mean Scores</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Depression */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
             <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-slate-800">Depression Average</span>
-              <span className="font-bold text-indigo-700">{avgDepression}%</span>
+              <span className="font-semibold text-slate-800">Depression Mean</span>
+              <span className="font-extrabold text-indigo-700 text-base">{avgDepression}</span>
             </div>
-            <ProgressBar value={avgDepression} colorVariant="indigo" showPercentage={false} height="md" />
-            <p className="text-[11px] text-slate-500">Cohort mean percentage score</p>
+            <p className="text-[11px] text-slate-500">Cohort mean score (Scale 0–42)</p>
           </div>
 
           {/* Anxiety */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
             <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-slate-800">Anxiety Average</span>
-              <span className="font-bold text-amber-700">{avgAnxiety}%</span>
+              <span className="font-semibold text-slate-800">Anxiety Mean</span>
+              <span className="font-extrabold text-amber-700 text-base">{avgAnxiety}</span>
             </div>
-            <ProgressBar value={avgAnxiety} colorVariant="amber" showPercentage={false} height="md" />
-            <p className="text-[11px] text-slate-500">Cohort mean percentage score</p>
+            <p className="text-[11px] text-slate-500">Cohort mean score (Scale 0–42)</p>
           </div>
 
           {/* Stress */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
             <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-slate-800">Stress Average</span>
-              <span className="font-bold text-rose-700">{avgStress}%</span>
+              <span className="font-semibold text-slate-800">Stress Mean</span>
+              <span className="font-extrabold text-rose-700 text-base">{avgStress}</span>
             </div>
-            <ProgressBar value={avgStress} colorVariant="rose" showPercentage={false} height="md" />
-            <p className="text-[11px] text-slate-500">Cohort mean percentage score</p>
+            <p className="text-[11px] text-slate-500">Cohort mean score (Scale 0–42)</p>
           </div>
         </div>
       </div>
