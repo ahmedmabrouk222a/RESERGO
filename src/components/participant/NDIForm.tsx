@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { NDIAnswer } from '../../types/assessment';
 import { NDI_SECTIONS } from '../../data/ndiQuestions';
-import { Activity, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Activity, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, Info, Slash } from 'lucide-react';
 import { MedicalDisclaimer } from '../common/MedicalDisclaimer';
 
 interface NDIFormProps {
@@ -51,6 +51,27 @@ export const NDIForm: React.FC<NDIFormProps> = ({
     }
   };
 
+  const handleSetNotApplicable = (sectionId: number) => {
+    setValidationError(null);
+    setAnswers(prev => prev.map(a => {
+      if (a.sectionId === sectionId) {
+        return {
+          ...a,
+          isApplicable: false,
+          selectedOptionIndex: null
+        };
+      }
+      return a;
+    }));
+
+    if (sectionId < 10) {
+      const nextElem = document.getElementById(`ndi-section-${sectionId + 1}`);
+      if (nextElem) {
+        nextElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  };
+
   const handleToggleApplicable = (sectionId: number) => {
     setValidationError(null);
     setAnswers(prev => prev.map(a => {
@@ -73,19 +94,26 @@ export const NDIForm: React.FC<NDIFormProps> = ({
     }
   };
 
-  const answeredCount = answers.filter(
-    a => !a.isApplicable || (a.selectedOptionIndex !== null && a.selectedOptionIndex >= 0)
-  ).length;
+  // Count sections answered or explicitly marked N/A
+  const answeredApplicableCount = answers.filter(a => a.isApplicable && a.selectedOptionIndex !== null).length;
+  const explicitNACount = answers.filter(a => !a.isApplicable).length;
+
+  // Max Possible Score Denominator (e.g. 50 if 10 answered, 45 if 9 answered, 40 if 8 answered)
+  const calculatedMaxScore = answeredApplicableCount > 0 ? answeredApplicableCount * 5 : 50;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const missing = answers.find(a => a.isApplicable && (a.selectedOptionIndex === null || a.selectedOptionIndex < 0));
-    if (missing) {
-      setValidationError(`Please select an answer for ${missing.sectionName} or mark it as not applicable before continuing.`);
-      scrollToSection(missing.sectionId);
-      return;
-    }
-    onNext(answers);
+
+    // Automatically convert any unselected sections to isApplicable = false (N/A)
+    // so denominator automatically drops to 45 (if 1 skipped) or 40 (if 2 skipped)
+    const processedAnswers = answers.map(a => {
+      if (a.isApplicable && a.selectedOptionIndex === null) {
+        return { ...a, isApplicable: false };
+      }
+      return a;
+    });
+
+    onNext(processedAnswers);
   };
 
   return (
@@ -102,13 +130,31 @@ export const NDIForm: React.FC<NDIFormProps> = ({
               Select ONE choice in each section that best describes your condition.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-600">Progress:</span>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-              answeredCount === 10 ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-50 text-teal-800 border border-teal-200'
-            }`}>
-              {answeredCount} / 10 sections
-            </span>
+
+          {/* Live Calculated Denominator Banner */}
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-600">NDI Max Score:</span>
+              <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-teal-700 text-white shadow-2xs">
+                {calculatedMaxScore} Points ({answeredApplicableCount}/10 Sections)
+              </span>
+            </div>
+            {explicitNACount > 0 && (
+              <span className="text-[11px] font-semibold text-amber-700">
+                ({explicitNACount} {explicitNACount === 1 ? 'Section' : 'Sections'} Excluded → Denominator: {calculatedMaxScore})
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* NDI Scoring Rule Helper Notice */}
+        <div className="p-3.5 rounded-2xl bg-teal-50/80 border border-teal-200/80 text-teal-900 text-xs flex items-start gap-2.5">
+          <Info className="w-4 h-4 text-teal-700 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <p className="font-bold">Standard Clinical NDI Scoring Rule:</p>
+            <p className="text-[11px] text-teal-800 leading-snug">
+              If an activity does not apply to you (e.g., <strong>Section 8: Driving</strong> if you do not drive, or <strong>Section 10: Recreation</strong> if you do not practice sports), mark it as <strong>Does Not Apply (N/A)</strong>. The scoring denominator automatically adjusts from <strong>50 to 45</strong> (or <strong>40</strong> if both are excluded).
+            </p>
           </div>
         </div>
 
@@ -117,7 +163,8 @@ export const NDIForm: React.FC<NDIFormProps> = ({
           <span className="font-bold text-slate-500 text-[11px] uppercase tracking-wider shrink-0 mr-1">Sections:</span>
           {NDI_SECTIONS.map((sec) => {
             const ans = answers.find(a => a.sectionId === sec.id);
-            const isDone = ans && (!ans.isApplicable || (ans.selectedOptionIndex !== null && ans.selectedOptionIndex >= 0));
+            const isAnswered = ans && ans.isApplicable && ans.selectedOptionIndex !== null;
+            const isNA = ans && !ans.isApplicable;
 
             return (
               <button
@@ -125,7 +172,9 @@ export const NDIForm: React.FC<NDIFormProps> = ({
                 type="button"
                 onClick={() => scrollToSection(sec.id)}
                 className={`w-7 h-7 rounded-lg font-bold shrink-0 transition-all cursor-pointer ${
-                  isDone
+                  isNA
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : isAnswered
                     ? 'bg-teal-700 text-white shadow-2xs'
                     : 'bg-white text-slate-600 hover:bg-slate-200 border border-slate-200'
                 }`}
@@ -150,7 +199,7 @@ export const NDIForm: React.FC<NDIFormProps> = ({
         <div className="space-y-8 pt-2">
           {NDI_SECTIONS.map((section) => {
             const currentAnswer = answers.find(a => a.sectionId === section.id);
-            const isAnswered = currentAnswer && currentAnswer.selectedOptionIndex !== null;
+            const isAnswered = currentAnswer && currentAnswer.isApplicable && currentAnswer.selectedOptionIndex !== null;
             const isNA = currentAnswer && !currentAnswer.isApplicable;
 
             return (
@@ -159,7 +208,7 @@ export const NDIForm: React.FC<NDIFormProps> = ({
                 id={`ndi-section-${section.id}`}
                 className={`p-5 sm:p-6 rounded-2xl border transition-all ${
                   isNA
-                    ? 'bg-slate-50 border-slate-200/80 opacity-75'
+                    ? 'bg-amber-50/60 border-amber-200'
                     : isAnswered
                     ? 'bg-white border-teal-200 shadow-xs ring-1 ring-teal-500/10'
                     : 'bg-white border-slate-200'
@@ -170,23 +219,38 @@ export const NDIForm: React.FC<NDIFormProps> = ({
                     <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
                       <span>{section.title}</span>
                       {isAnswered && <CheckCircle2 className="w-4 h-4 text-teal-600" />}
+                      {isNA && <span className="text-xs px-2 py-0.5 rounded-md font-bold bg-amber-200 text-amber-900">N/A (Excluded)</span>}
                     </h3>
                     <p className="text-xs text-slate-500">{section.description}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleToggleApplicable(section.id)}
-                    className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-colors self-start sm:self-auto cursor-pointer ${
+                    className={`text-xs px-3 py-1.5 rounded-xl font-semibold transition-colors self-start sm:self-auto cursor-pointer ${
                       isNA
-                        ? 'bg-slate-800 text-slate-200'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        ? 'bg-amber-700 text-white shadow-2xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
                     }`}
                   >
-                    {isNA ? 'Section Excluded (N/A)' : 'Mark N/A / Skip'}
+                    {isNA ? 'Re-enable Section' : 'Mark Does Not Apply (N/A)'}
                   </button>
                 </div>
 
-                {!isNA && (
+                {isNA ? (
+                  <div className="p-4 rounded-xl bg-amber-100/60 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Slash className="w-4 h-4 text-amber-700 shrink-0" />
+                      <span>This section is marked <strong>Not Applicable</strong> (Excluded from calculation). Denominator decreases by 5.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleApplicable(section.id)}
+                      className="font-bold underline text-amber-900 hover:text-amber-950 ml-2 cursor-pointer"
+                    >
+                      Undo N/A
+                    </button>
+                  </div>
+                ) : (
                   <div className="grid grid-cols-1 gap-2.5">
                     {section.options.map((opt) => {
                       const isSelected = currentAnswer?.selectedOptionIndex === opt.score;
@@ -210,6 +274,15 @@ export const NDIForm: React.FC<NDIFormProps> = ({
                         </div>
                       );
                     })}
+
+                    {/* Dedicated N/A Card inside choices for maximum clarity */}
+                    <div
+                      onClick={() => handleSetNotApplicable(section.id)}
+                      className="p-3 rounded-xl border border-dashed border-amber-300 bg-amber-50/40 hover:bg-amber-50 text-amber-900 text-xs font-semibold cursor-pointer transition-all flex items-center gap-2"
+                    >
+                      <Slash className="w-4 h-4 text-amber-700 shrink-0" />
+                      <span>This activity does not apply to me at all (e.g. I do not drive or do sports) — Exclude Section</span>
+                    </div>
                   </div>
                 )}
               </div>
