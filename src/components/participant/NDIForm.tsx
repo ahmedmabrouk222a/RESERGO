@@ -96,7 +96,7 @@ export const NDIForm: React.FC<NDIFormProps> = ({
 
   // Count sections answered or explicitly marked N/A
   const answeredApplicableCount = answers.filter(a => a.isApplicable && a.selectedOptionIndex !== null).length;
-  const explicitNACount = answers.filter(a => !a.isApplicable).length;
+  const explicitNACount = answers.filter(a => !a.isApplicable || a.selectedOptionIndex === null).length;
 
   // Max Possible Score Denominator (e.g. 50 if 10 answered, 45 if 9 answered, 40 if 8 answered)
   const calculatedMaxScore = answeredApplicableCount > 0 ? answeredApplicableCount * 5 : 50;
@@ -107,10 +107,10 @@ export const NDIForm: React.FC<NDIFormProps> = ({
     // Automatically convert any unselected sections to isApplicable = false (N/A)
     // so denominator automatically drops to 45 (if 1 skipped) or 40 (if 2 skipped)
     const processedAnswers = answers.map(a => {
-      if (a.isApplicable && a.selectedOptionIndex === null) {
-        return { ...a, isApplicable: false };
+      if (!a.isApplicable || a.selectedOptionIndex === null) {
+        return { ...a, isApplicable: false, selectedOptionIndex: null };
       }
-      return a;
+      return { ...a, isApplicable: true };
     });
 
     onNext(processedAnswers);

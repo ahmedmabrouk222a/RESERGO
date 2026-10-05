@@ -1,4 +1,5 @@
 import type { ParticipantSubmission } from '../types/assessment';
+import { calculateNDI } from './scoring/ndi';
 
 const STORAGE_KEY = 'academic_research_submissions_v1';
 const ADMIN_CREDS_KEY = 'academic_research_admin_creds_v1';
@@ -55,7 +56,16 @@ export function getStoredSubmissions(): ParticipantSubmission[] {
       localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
       return [];
     }
-    return JSON.parse(raw);
+    const list: ParticipantSubmission[] = JSON.parse(raw);
+    return list.map(sub => {
+      if (sub.ndiAnswers && sub.ndiAnswers.length > 0) {
+        return {
+          ...sub,
+          ndiResult: calculateNDI(sub.ndiAnswers)
+        };
+      }
+      return sub;
+    });
   } catch (err) {
     console.error('Failed to parse stored submissions:', err);
     return [];

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { ParticipantSubmission } from '../types/assessment';
+import { calculateNDI } from './scoring/ndi';
 
 // Read from environment variables if present
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -135,6 +136,15 @@ export async function fetchSubmissionsFromSupabase(): Promise<ParticipantSubmiss
       const ndiList = (ndiResp || []).filter(n => n.participant_id === p.id);
       const dassList = (dassResp || []).filter(d => d.participant_id === p.id);
 
+      const parsedNdiAnswers = ndiList.map(n => ({
+        sectionId: n.section_number,
+        sectionName: n.section_name,
+        selectedOptionIndex: n.selected_option_index,
+        isApplicable: n.is_applicable
+      }));
+
+      const calculatedNDI = calculateNDI(parsedNdiAnswers);
+
       return {
         id: p.id,
         participantId: p.participant_id,
@@ -148,12 +158,7 @@ export async function fetchSubmissionsFromSupabase(): Promise<ParticipantSubmiss
           weeklyLabHours: Number(p.weekly_lab_clinical_hours),
           vasScore: p.vas_score,
         },
-        ndiAnswers: ndiList.map(n => ({
-          sectionId: n.section_number,
-          sectionName: n.section_name,
-          selectedOptionIndex: n.selected_option_index,
-          isApplicable: n.is_applicable
-        })),
+        ndiAnswers: parsedNdiAnswers,
         dassAnswers: dassList.map(d => ({
           questionNumber: d.question_number,
           score: d.score,
@@ -165,12 +170,7 @@ export async function fetchSubmissionsFromSupabase(): Promise<ParticipantSubmiss
           breaks: e.breaks_score ?? 0,
           chair: e.chair_score ?? 0,
         },
-        ndiResult: {
-          totalScore: r.ndi_score ?? 0,
-          maxPossibleScore: r.ndi_max_score ?? 50,
-          percentage: Number(r.ndi_percentage ?? 0),
-          severity: r.ndi_severity ?? 'No Disability'
-        },
+        ndiResult: calculatedNDI,
         dassResult: {
           depression: {
             rawScore: r.depression_raw ?? 0,
