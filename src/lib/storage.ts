@@ -95,6 +95,17 @@ export function clearAllSubmissions(): void {
   }
 }
 
+export function deleteStoredSubmission(id: string): void {
+  try {
+    const current = getStoredSubmissions();
+    const updated = current.filter(s => s.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
+  } catch (err) {
+    console.error('Failed to delete submission from local storage:', err);
+  }
+}
+
 export function generateParticipantId(): string {
   const year = new Date().getFullYear();
   const randomNum = Math.floor(1000 + Math.random() * 9000);

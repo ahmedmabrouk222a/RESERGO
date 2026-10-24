@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import type { ParticipantSubmission } from '../../types/assessment';
-import { Search, ArrowUpDown, Eye, Download, X } from 'lucide-react';
+import { Search, ArrowUpDown, Eye, Download, X, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { SeverityBadge } from '../common/SeverityBadge';
 
 interface ParticipantsTabProps {
   submissions: ParticipantSubmission[];
   onViewParticipant: (sub: ParticipantSubmission) => void;
+  onDeleteParticipant?: (id: string) => Promise<void> | void;
   onExportCSV: () => void;
   onExportExcel: () => void;
 }
@@ -15,9 +16,14 @@ type SortField = 'name' | 'age' | 'ndi' | 'vas' | 'stress' | 'depression' | 'anx
 export const ParticipantsTab: React.FC<ParticipantsTabProps> = ({
   submissions,
   onViewParticipant,
+  onDeleteParticipant,
   onExportCSV,
   onExportExcel,
 }) => {
+  // Delete modal state
+  const [participantToDelete, setParticipantToDelete] = useState<ParticipantSubmission | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -148,6 +154,19 @@ export const ParticipantsTab: React.FC<ParticipantsTabProps> = ({
     setAnxFilter('');
     setErgoFilter('');
     setCurrentPage(1);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!participantToDelete || !onDeleteParticipant) return;
+    try {
+      setIsDeleting(true);
+      await onDeleteParticipant(participantToDelete.id);
+      setParticipantToDelete(null);
+    } catch (err) {
+      console.error('Failed to delete participant:', err);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -467,13 +486,26 @@ export const ParticipantsTab: React.FC<ParticipantsTabProps> = ({
 
                     {/* Action */}
                     <td className="py-3 px-4 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => onViewParticipant(sub)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-semibold text-xs transition-colors cursor-pointer"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>View</span>
-                      </button>
+                      <div className="inline-flex items-center gap-1.5 justify-end">
+                        <button
+                          onClick={() => onViewParticipant(sub)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 font-semibold text-xs transition-colors cursor-pointer"
+                          title="View Details"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View</span>
+                        </button>
+                        {onDeleteParticipant && (
+                          <button
+                            onClick={() => setParticipantToDelete(sub)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs transition-colors cursor-pointer"
+                            title="Delete Participant Record"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -506,6 +538,71 @@ export const ParticipantsTab: React.FC<ParticipantsTabProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {participantToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Delete Participant Record?</h3>
+                <p className="text-xs text-slate-500">This action will permanently delete this record.</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-xs">
+              <div className="flex justify-between text-slate-600">
+                <span>Participant ID:</span>
+                <span className="font-mono font-bold text-slate-900">{participantToDelete.participantId}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Full Name:</span>
+                <span className="font-semibold text-slate-900">{participantToDelete.demographics.fullName}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Major / Year:</span>
+                <span className="text-slate-700">{participantToDelete.demographics.academicMajor} • {participantToDelete.demographics.yearOfStudy}</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Are you sure you want to delete this participant's responses and assessment results from the system?
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setParticipantToDelete(null)}
+                className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

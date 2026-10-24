@@ -9,8 +9,8 @@ import type {
   AdminUser
 } from './types/assessment';
 import { calculateAllResults } from './lib/scoring';
-import { getStoredSubmissions, saveSubmission, clearAllSubmissions, generateParticipantId } from './lib/storage';
-import { fetchSubmissionsFromSupabase, isSupabaseConfigured, syncSubmissionToSupabase } from './lib/supabase';
+import { getStoredSubmissions, saveSubmission, clearAllSubmissions, deleteStoredSubmission, generateParticipantId } from './lib/storage';
+import { fetchSubmissionsFromSupabase, isSupabaseConfigured, syncSubmissionToSupabase, deleteSubmissionFromSupabase } from './lib/supabase';
 import { exportToCSV, exportToExcel } from './lib/export';
 
 // Components
@@ -244,6 +244,25 @@ export function App() {
     setSubmissions([]);
   };
 
+  const handleDeleteParticipant = async (id: string) => {
+    // 1. Delete from local storage
+    deleteStoredSubmission(id);
+
+    // 2. Delete from Supabase if configured
+    if (isSupabaseConfigured) {
+      await deleteSubmissionFromSupabase(id);
+    }
+
+    // 3. Immediately update UI state
+    setSubmissions(prev => prev.filter(s => s.id !== id));
+    if (selectedParticipant?.id === id) {
+      setSelectedParticipant(null);
+    }
+
+    // 4. Trigger background refresh/re-sync
+    await refreshData();
+  };
+
   // Counts for step indicator
   const ndiCount = ndiAnswers.filter(a => !a.isApplicable || (a.selectedOptionIndex !== null && a.selectedOptionIndex >= 0)).length;
   const ergoCount = Object.values(ergoAnswers).filter(v => v !== undefined).length;
@@ -358,6 +377,7 @@ export function App() {
                 submissions={submissions}
                 onViewParticipant={(sub) => setSelectedParticipant(sub)}
                 onNavigateToParticipants={() => setAdminTab('participants')}
+                onDeleteParticipant={handleDeleteParticipant}
               />
             )}
 
@@ -365,6 +385,7 @@ export function App() {
               <ParticipantsTab
                 submissions={submissions}
                 onViewParticipant={(sub) => setSelectedParticipant(sub)}
+                onDeleteParticipant={handleDeleteParticipant}
                 onExportCSV={() => exportToCSV(submissions)}
                 onExportExcel={() => exportToExcel(submissions)}
               />
@@ -392,6 +413,7 @@ export function App() {
             <ParticipantDetailsModal
               submission={selectedParticipant}
               onClose={() => setSelectedParticipant(null)}
+              onDeleteParticipant={handleDeleteParticipant}
             />
           </AdminLayout>
         )

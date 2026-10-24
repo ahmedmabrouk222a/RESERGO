@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ParticipantSubmission } from '../../types/assessment';
-import { Users, Activity, Monitor, Brain, AlertTriangle, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { Users, Activity, Monitor, Brain, AlertTriangle, TrendingUp, ArrowUpRight, Trash2 } from 'lucide-react';
 import { SeverityBadge } from '../common/SeverityBadge';
 import { ProgressBar } from '../common/ProgressBar';
 
@@ -8,12 +8,14 @@ interface OverviewTabProps {
   submissions: ParticipantSubmission[];
   onViewParticipant: (sub: ParticipantSubmission) => void;
   onNavigateToParticipants: () => void;
+  onDeleteParticipant?: (id: string) => Promise<void> | void;
 }
 
 export const OverviewTab: React.FC<OverviewTabProps> = ({
   submissions,
   onViewParticipant,
   onNavigateToParticipants,
+  onDeleteParticipant,
 }) => {
   const total = submissions.length;
 
@@ -221,6 +223,21 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 >
                   View
                 </button>
+
+                {onDeleteParticipant && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`Delete record for ${sub.demographics.fullName} (${sub.participantId})?`)) {
+                        onDeleteParticipant(sub.id);
+                      }
+                    }}
+                    className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors cursor-pointer"
+                    title="Delete Record"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           ))}

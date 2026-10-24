@@ -239,3 +239,29 @@ export async function fetchSubmissionsFromSupabase(): Promise<ParticipantSubmiss
     return null;
   }
 }
+
+/**
+ * Deletes a participant submission and related questionnaire responses from Supabase.
+ */
+export async function deleteSubmissionFromSupabase(submissionId: string): Promise<boolean> {
+  if (!supabase) return false;
+
+  try {
+    // Delete related child records first to ensure foreign key safety
+    await supabase.from('assessment_results').delete().eq('participant_id', submissionId);
+    await supabase.from('ndi_responses').delete().eq('participant_id', submissionId);
+    await supabase.from('dass_responses').delete().eq('participant_id', submissionId);
+    await supabase.from('ergonomic_responses').delete().eq('participant_id', submissionId);
+
+    const { error } = await supabase.from('participants').delete().eq('id', submissionId);
+    if (error) {
+      console.error('Supabase participant delete error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Failed to delete submission from Supabase:', err);
+    return false;
+  }
+}
+

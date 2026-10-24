@@ -26,9 +26,20 @@ export const DemographicForm: React.FC<DemographicFormProps> = ({
     "Occupational Therapy",
     "Radiology / Medical Imaging",
     "Public Health",
-    "Biology / Pre-Med",
-    "Other Academic Major"
+    "Biology / Pre-Med"
   ];
+
+  // Detect if initialData already had a custom major not in predefined list
+  const isInitialCustom = Boolean(
+    initialData.academicMajor &&
+    !academicMajors.includes(initialData.academicMajor) &&
+    initialData.academicMajor !== 'Other'
+  );
+
+  const [isCustomMajor, setIsCustomMajor] = useState<boolean>(isInitialCustom || initialData.academicMajor === 'Other');
+  const [customMajorInput, setCustomMajorInput] = useState<string>(
+    isInitialCustom ? initialData.academicMajor : ''
+  );
 
   const studyYears = [
     "Year 1",
@@ -44,6 +55,8 @@ export const DemographicForm: React.FC<DemographicFormProps> = ({
     const sampleNames = ["Dr. Layla Mansour", "Omar Al-Khatib", "Sara Al-Hassan", "Youssef Ibrahim"];
     const randomName = sampleNames[Math.floor(Math.random() * sampleNames.length)];
     
+    setIsCustomMajor(false);
+    setCustomMajorInput('');
     setFormData({
       fullName: randomName,
       age: 24,
@@ -69,9 +82,14 @@ export const DemographicForm: React.FC<DemographicFormProps> = ({
     if (!formData.sex) {
       errs.sex = "Please select sex";
     }
-    if (!formData.academicMajor) {
-      errs.academicMajor = "Academic major is required";
+
+    const effectiveMajor = isCustomMajor ? customMajorInput.trim() : formData.academicMajor;
+    if (!effectiveMajor) {
+      errs.academicMajor = isCustomMajor 
+        ? "Please enter your college name (يرجى كتابة اسم كليتك)" 
+        : "Academic major / college is required";
     }
+
     if (!formData.yearOfStudy) {
       errs.yearOfStudy = "Year of study is required";
     }
@@ -89,7 +107,11 @@ export const DemographicForm: React.FC<DemographicFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      onNext(formData);
+      const finalMajor = isCustomMajor ? customMajorInput.trim() : formData.academicMajor;
+      onNext({
+        ...formData,
+        academicMajor: finalMajor,
+      });
     }
   };
 
@@ -210,28 +232,88 @@ export const DemographicForm: React.FC<DemographicFormProps> = ({
             {errors.sex && <p className="text-xs text-rose-600 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.sex}</p>}
           </div>
 
-          {/* Academic Major */}
+          {/* Academic Major / Faculty */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Academic Major <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={formData.academicMajor}
-              onChange={(e) => {
-                setFormData({ ...formData, academicMajor: e.target.value });
-                if (errors.academicMajor) setErrors({ ...errors, academicMajor: '' });
-              }}
-              className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all ${
-                errors.academicMajor
-                  ? 'border-rose-300 bg-rose-50/50 focus:ring-rose-500'
-                  : 'border-slate-200 focus:border-teal-500 focus:ring-teal-500/20'
-              }`}
-            >
-              <option value="">Select Major...</option>
-              {academicMajors.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                Academic Major / College (الكلية أو التخصص) <span className="text-rose-500">*</span>
+              </label>
+              {!isCustomMajor && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomMajor(true);
+                    setFormData(prev => ({ ...prev, academicMajor: customMajorInput.trim() }));
+                  }}
+                  className="text-[11px] text-teal-700 hover:text-teal-800 font-semibold underline underline-offset-2 cursor-pointer"
+                >
+                  + Add other college (إضافة كليتي)
+                </button>
+              )}
+            </div>
+
+            {!isCustomMajor ? (
+              <select
+                value={formData.academicMajor}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '__other__') {
+                    setIsCustomMajor(true);
+                    setFormData({ ...formData, academicMajor: customMajorInput.trim() });
+                  } else {
+                    setFormData({ ...formData, academicMajor: val });
+                    if (errors.academicMajor) setErrors({ ...errors, academicMajor: '' });
+                  }
+                }}
+                className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all ${
+                  errors.academicMajor
+                    ? 'border-rose-300 bg-rose-50/50 focus:ring-rose-500'
+                    : 'border-slate-200 focus:border-teal-500 focus:ring-teal-500/20'
+                }`}
+              >
+                <option value="">Select College / Major (اختر كليتك)...</option>
+                {academicMajors.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+                <option value="__other__">✨ Other College / كلية أخرى (غير موجودة بالقائمة)</option>
+              </select>
+            ) : (
+              <div className="space-y-1.5">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={customMajorInput}
+                    autoFocus
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomMajorInput(val);
+                      setFormData({ ...formData, academicMajor: val });
+                      if (errors.academicMajor) setErrors({ ...errors, academicMajor: '' });
+                    }}
+                    placeholder="Enter your college name (اكتب اسم كليتك هنا)..."
+                    className={`w-full px-4 py-2.5 pr-28 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all ${
+                      errors.academicMajor
+                        ? 'border-rose-300 bg-rose-50/50 focus:ring-rose-500'
+                        : 'border-slate-200 focus:border-teal-500 focus:ring-teal-500/20'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCustomMajor(false);
+                      setFormData({ ...formData, academicMajor: '' });
+                      if (errors.academicMajor) setErrors({ ...errors, academicMajor: '' });
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Choose from list
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Type your faculty / major name (e.g., Faculty of Science, Computer Science, Engineering, etc.)
+                </p>
+              </div>
+            )}
             {errors.academicMajor && <p className="text-xs text-rose-600 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.academicMajor}</p>}
           </div>
 

@@ -3,25 +3,43 @@ import type { ParticipantSubmission } from '../../types/assessment';
 import { NDI_SECTIONS } from '../../data/ndiQuestions';
 import { ERGO_QUESTIONS } from '../../data/ergoQuestions';
 import { DASS_QUESTIONS, DASS_RATING_OPTIONS } from '../../data/dassQuestions';
-import { X, User, Activity, Monitor, Brain, Printer } from 'lucide-react';
+import { X, User, Activity, Monitor, Brain, Printer, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { SeverityBadge } from '../common/SeverityBadge';
 import { ProgressBar } from '../common/ProgressBar';
 
 interface ParticipantDetailsModalProps {
   submission: ParticipantSubmission | null;
   onClose: () => void;
+  onDeleteParticipant?: (id: string) => Promise<void> | void;
 }
 
 export const ParticipantDetailsModal: React.FC<ParticipantDetailsModalProps> = ({
   submission,
   onClose,
+  onDeleteParticipant,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'ndi' | 'ergo' | 'dass'>('overview');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (!submission) return null;
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDelete = async () => {
+    if (!onDeleteParticipant || !submission) return;
+    try {
+      setIsDeleting(true);
+      await onDeleteParticipant(submission.id);
+      setShowDeleteConfirm(false);
+      onClose();
+    } catch (err) {
+      console.error('Failed to delete participant:', err);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -47,21 +65,73 @@ export const ParticipantDetailsModal: React.FC<ParticipantDetailsModalProps> = (
           </div>
 
           <div className="flex items-center gap-2">
+            {onDeleteParticipant && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 transition-colors no-print cursor-pointer"
+                title="Delete Participant Record"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
             <button
               onClick={handlePrint}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors no-print"
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors no-print cursor-pointer"
               title="Print Participant Dossier"
             >
               <Printer className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors no-print"
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors no-print cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
+
+        {/* Delete Confirmation Alert Banner */}
+        {showDeleteConfirm && (
+          <div className="bg-rose-900 text-white px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-rose-800 animate-in fade-in duration-150 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-800 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-rose-200" />
+              </div>
+              <div className="text-xs">
+                <p className="font-bold">Are you sure you want to permanently delete this participant record?</p>
+                <p className="text-rose-200">This will remove all demographic responses, NDI, Ergonomic, and DASS-21 score data.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-3 py-1.5 rounded-lg bg-rose-950 hover:bg-rose-800 text-rose-200 text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDelete}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-rose-900 text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-700" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5 text-rose-700" />
+                    <span>Confirm Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Inner Tabs Header */}
         <div className="bg-slate-100 border-b border-slate-200 px-6 py-2 flex gap-2 shrink-0 no-print">
